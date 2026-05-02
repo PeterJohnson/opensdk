@@ -20,42 +20,39 @@
 
 # This script is only to cleanup the sysroot and normalize
 # and differences in the filesystem layout that exist between
-# Debian and NI Linux. The goal is to have everyone follow a
-# layout similar to NI Linux as it is easier to navigate.
+# Debian and Systemcore/Buildroot. Systemcore/Buildroot
+# extensively uses symlinks in its sysroot, but our environments
+# make symlinks tricky, so we need to manually relocate some
+# libraries to ensure they can be found by the toolchain. We
+# also want to mimimize the number of relocations to avoid
+# future maintainence issues and to minimize the risk of error.
 
-# We do however modify the NI Linux layout to have libgcc_s
-# in /usr/lib instead of /lib out of convenience. While we
-# could move individual files to the correct location, it
-# would be easier to cleanup and rebuild as the libgcc
-# startup files (crt*.o) are in the wrong location.
-
-# The Debian filesystem is better for multilib environments
-# but this causes issues with a more vanilla version of
-# binutils and GCC. So by using the NI Linux layout, we can
-# avoid patching/hacking the build tools.
 
 source "$(dirname "$0")/common.sh"
 
 xcd "${BUILD_DIR}/sysroot-install/${TARGET_TUPLE}/sysroot"
 
-if [ "${TARGET_DISTRO}" = "roborio" ] ||
-    [ "${TARGET_DISTRO}" = "roborio-academic" ]; then
-    # Force rebuild of libgcc and its startup files
-    rm -rf lib/libgcc*
-    rm -rf usr/lib/crtbegin*.o
-    rm -rf usr/lib/crtend*.o
-    rm -rf usr/lib/crtfastmath*.o
-    rm -rf usr/lib/gcc
-
-    # Why is this here on the rio?
-    rm -rf lib/cpp
-
-    # Quirk with the academic branch where the headers have the full version
-    # number, but the rest of the project expects this to be the major number.
-    if [ -d "usr/include/c++/${V_GCC}" ]; then
-        mv "usr/include/c++/${V_GCC}" "usr/include/c++/${V_GCC/.*/}"
-    fi
-
+if [ "${TARGET_DISTRO}" = "systemcore" ]; then
+    # Required for <bits/c++config.h> to be in the right spot
+    mv "usr/include/c++/${V_GCC/.*/}/aarch64-buildroot-linux-gnu/bits"/* "usr/include/c++/14/bits/"
+    mv "usr/include/c++/${V_GCC/.*/}/aarch64-buildroot-linux-gnu/ext"/* "usr/include/c++/14/ext/"
+    # libc.so, libm.a, libm.so all use linker scripts that use absolute paths to refer to libraries
+    # We want to copy the least number of libraries, so it would be good to move everything once to
+    # a place that will require the least number of libraries to be relocated. Of the libraries that
+    # appear, /lib64 and /usr/lib64 show up the most (3 times). We will choose /lib64 due to it being
+    # shorter, which may help with Windows path length later.
+    # First, move everything we can before renaming stuff
+    mkdir -p lib
+    mkdir -p usr/lib64
+    mv usr/lib/ld-linux-aarch64.so.1 lib/ld-linux-aarch64.so.1
+    mv usr/lib/libm-2.42.a usr/lib64/libm-2.42.a
+    mv usr/lib/libmvec.a usr/lib64/libmvec.a
+    mv usr/lib/libc_nonshared.a usr/lib64/libc_nonshared.a
+    # Relocate everything
+    mv usr/lib lib64
+    # Move gcc/aarch64-linux-gnu directory back
+    mkdir -p usr/lib
+    mv lib64/gcc usr/lib/gcc
 else
     rm -rf usr/lib/audit
     rm -rf usr/lib/bfd-plugins
