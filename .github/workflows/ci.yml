@@ -14,7 +14,7 @@ jobs:
   build-sysroot-bookworm-arm64:
     name: Build sysroot for bookworm-arm64
     runs-on: ubuntu-latest
-    container: "docker.io/wpilib/opensdk-ubuntu:20.04"
+    container: "docker.io/wpilib/opensdk-ubuntu:22.04"
     env:
       WPI_TARGET: bookworm
       WPI_TARGET_PORT: arm64
@@ -40,9 +40,15 @@ jobs:
         host:
           [
             {
+              os-cfg: linux_x86_64,
+              runner: ubuntu-latest,
+              container: "docker.io/wpilib/opensdk-ubuntu:22.04",
+              testable: true,
+            },
+            {
               os-cfg: windows_x86_64,
               runner: ubuntu-latest,
-              container: "docker.io/wpilib/opensdk-ubuntu:20.04",
+              container: "docker.io/wpilib/opensdk-ubuntu:22.04",
               testable: false,
             },
             {
