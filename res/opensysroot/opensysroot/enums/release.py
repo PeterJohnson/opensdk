@@ -13,10 +13,6 @@ class Release(Enum):
     FOCAL = "focal"
     JAMMY = "jammy"
 
-    # NI Real-Time Linux
-    NI2021 = "2021.8"
-    NI2023 = "2023"
-
     # SystemCore
     RELEASE_157 = "157"
     RELEASE_308 = "308"

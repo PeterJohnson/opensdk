@@ -1,4 +1,4 @@
-Description: Set __FRC_ROBORIO_ in platform config
+Description: Set __CROSS_BOOKWORM__ in platform config
 Author: WPILib Developers <wpilib@wpi.edu>
 
 ---
